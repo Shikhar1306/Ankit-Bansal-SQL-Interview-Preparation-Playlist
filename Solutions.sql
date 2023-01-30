@@ -31,3 +31,19 @@ sum(case when win_flag = 1 then 1 else 0 end) no_of_wins,
 sum(case when win_flag = 0 then 1 else 0 end) no_of_losses
 from cte
 group by Team_Name
+
+--Q2. Complex SQL 2 | find new and repeat customers | SQL Interview Questions
+--https://www.youtube.com/watch?v=MpAMjtvarrc&list=PLBTZqjSKn0IeKBQDjLmzisazhqQy4iGkb&index=2
+
+create table customer_orders (
+order_id integer,
+customer_id integer,
+order_date date,
+order_amount integer
+);
+
+insert into customer_orders values(1,100,cast('2022-01-01' as date),2000),(2,200,cast('2022-01-01' as date),2500),(3,300,cast('2022-01-01' as date),2100)
+,(4,100,cast('2022-01-02' as date),2000),(5,400,cast('2022-01-02' as date),2200),(6,500,cast('2022-01-02' as date),2700)
+,(7,100,cast('2022-01-03' as date),3000),(8,400,cast('2022-01-03' as date),1000),(9,600,cast('2022-01-03' as date),3000);
+
+select * from customer_orders
