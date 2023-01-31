@@ -1,0 +1,46 @@
+--Q3. Complex SQL 3 | Scenario based Interviews Question for Product companies
+--https://www.youtube.com/watch?v=P6kNMyqKD0A&list=PLBTZqjSKn0IeKBQDjLmzisazhqQy4iGkb&index=3
+
+create table entries ( 
+name varchar(20),
+address varchar(20),
+email varchar(20),
+floor int,
+resources varchar(10));
+
+insert into entries 
+values ('A','Bangalore','A@gmail.com',1,'CPU'),('A','Bangalore','A1@gmail.com',1,'CPU'),('A','Bangalore','A2@gmail.com',2,'DESKTOP')
+,('B','Bangalore','B@gmail.com',2,'DESKTOP'),('B','Bangalore','B1@gmail.com',2,'DESKTOP'),('B','Bangalore','B2@gmail.com',1,'MONITOR');
+
+select * from entries;
+
+with floor_visit_rnk as
+(
+	select name, floor, count(name) no_of_floor_visits, dense_rank() over(order by count(name) desc) rnk
+	from entries
+	group by name, floor
+),
+total_visits as
+(
+	select name, count(floor) total_visits
+	from entries
+	group by name
+),
+distinct_resources as
+(
+	select distinct resources resources, name
+	from entries
+),
+resources_used as
+(
+	select name, string_agg(resources,',') resources_used
+	from distinct_resources
+	group by name
+)
+select fvr.name, tv.total_visits, fvr.floor most_visited_floor, ru.resources_used
+from floor_visit_rnk fvr
+inner join total_visits tv
+on fvr.name = tv.name
+inner join resources_used ru
+on fvr.name = ru.name
+where fvr.rnk = 1
