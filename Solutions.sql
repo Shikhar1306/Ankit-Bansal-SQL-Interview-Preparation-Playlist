@@ -106,7 +106,7 @@ inner join resources_used ru
 on fvr.name = ru.name
 where fvr.rnk = 1
 
---Q6. Complex SQL 6 | Scenario based on join, group by and having clauses | SQL Interview Question
+--Q4. Complex SQL 6 | Scenario based on join, group by and having clauses | SQL Interview Question
 --https://www.youtube.com/watch?v=SfzbR69LquU&list=PLBTZqjSKn0IeKBQDjLmzisazhqQy4iGkb&index=6
 
 /*write a query to find PersonID, Name, number of friends, sum of marks
@@ -163,6 +163,35 @@ from cte c
 inner join person p
 on c.PersonID = p.PersonID
 
+--Q5. Complex SQL Problem Asked in a Fintech Startup | SQL For Data Analytics
+--https://www.youtube.com/watch?v=X6i1WMx0vnY
 
+--Write SQL to find all couple of trades for same stock that happened in the range of 10 seconds and having price difference by more than 10 %
 
+Create Table Trade_tbl(
+TRADE_ID varchar(20),
+Trade_Timestamp time,
+Trade_Stock varchar(20),
+Quantity int,
+Price Float
+)
 
+Insert into Trade_tbl Values('TRADE1','10:01:05','ITJunction4All',100,20)
+Insert into Trade_tbl Values('TRADE2','10:01:06','ITJunction4All',20,15)
+Insert into Trade_tbl Values('TRADE3','10:01:08','ITJunction4All',150,30)
+Insert into Trade_tbl Values('TRADE4','10:01:09','ITJunction4All',300,32)
+Insert into Trade_tbl Values('TRADE5','10:10:00','ITJunction4All',-100,19)
+Insert into Trade_tbl Values('TRADE6','10:10:01','ITJunction4All',-300,19)
+
+select * from Trade_tbl;
+
+with cte as
+(
+	select t1.TRADE_ID first_trade, t1.Price first_trade_price, t2.TRADE_ID second_trade, t2.Price second_trade_price, round(abs(t1.Price - t2.Price) * 100 / t1.price,2) percentdiff
+	from Trade_tbl t1 
+	inner join Trade_tbl t2
+	on DATEDIFF(second, t1.Trade_Timestamp, t2.Trade_Timestamp) <= 10 and DATEDIFF(second, t1.Trade_Timestamp, t2.Trade_Timestamp) > 0 and t1.TRADE_ID <> t2.TRADE_ID
+)
+select * from cte
+where percentdiff > 10
+order by first_trade;
