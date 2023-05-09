@@ -195,3 +195,178 @@ with cte as
 select * from cte
 where percentdiff > 10
 order by first_trade;
+
+--Q6. Leetcode Hard problem 2| Tournament Winners | Complex SQL
+--https://www.youtube.com/watch?v=IQ4n4n-Y9z8&list=PLBTZqjSKn0IeKBQDjLmzisazhqQy4iGkb&index=8
+
+--Write an SQL query to find the winner in each group.
+--The winner in each group is the player who scored the maximum total points within the group. In the case of a tie the lower player_id wins
+
+create table players
+(player_id int,
+group_id int)
+
+insert into players values (15,1);
+insert into players values (25,1);
+insert into players values (30,1);
+insert into players values (45,1);
+insert into players values (10,2);
+insert into players values (35,2);
+insert into players values (50,2);
+insert into players values (20,3);
+insert into players values (40,3);
+
+create table matches
+(
+match_id int,
+first_player int,
+second_player int,
+first_score int,
+second_score int)
+
+insert into matches values (1,15,45,3,0);
+insert into matches values (2,30,25,1,2);
+insert into matches values (3,30,15,2,0);
+insert into matches values (4,40,20,5,2);
+insert into matches values (5,35,50,1,1);
+
+with union_cte as
+(
+	select match_id, first_player player_id, first_score score
+	from matches
+	union all
+	select match_id, second_player, second_score
+	from matches
+),
+players_point_cte as
+(
+	select p.group_id, u.player_id, sum(u.score) total_points
+	from union_cte u
+	inner join players p
+	on u.player_id = p.player_id
+	group by p.group_id, u.player_id
+),
+rank_cte as
+(
+	select *, dense_rank() over (partition by group_id order by total_points desc, player_id) rnk
+	from players_point_cte
+)
+select * from rank_cte
+where rnk = 1
+
+--Q7. Amazon Prime Subscription Rate SQL Logic | Amazon Music | Complex SQL 14
+--https://www.youtube.com/watch?v=i_ljK9gmstY&list=PLBTZqjSKn0IeKBQDjLmzisazhqQy4iGkb&index=14
+
+--Prime subscription rate by product action
+--Given the following two tables, return the fraction of users, rounded to two decimal places, who accessed Amazon music and upgraded to prime membership within the first 30 days of signing up
+
+create table users
+(
+user_id integer,
+name varchar(20),
+join_date date
+);
+insert into users
+values (1, 'Jon', CAST('2-14-20' AS date)), 
+(2, 'Jane', CAST('2-14-20' AS date)), 
+(3, 'Jill', CAST('2-15-20' AS date)), 
+(4, 'Josh', CAST('2-15-20' AS date)), 
+(5, 'Jean', CAST('2-16-20' AS date)), 
+(6, 'Justin', CAST('2-17-20' AS date)),
+(7, 'Jeremy', CAST('2-18-20' AS date));
+
+create table events
+(
+user_id integer,
+type varchar(10),
+access_date date
+);
+
+insert into events values
+(1, 'Pay', CAST('3-1-20' AS date)), 
+(2, 'Music', CAST('3-2-20' AS date)), 
+(2, 'P', CAST('3-12-20' AS date)),
+(3, 'Music', CAST('3-15-20' AS date)), 
+(4, 'Music', CAST('3-15-20' AS date)), 
+(1, 'P', CAST('3-16-20' AS date)), 
+(3, 'P', CAST('3-22-20' AS date));
+
+select * from users;
+select * from events;
+
+with join_cte as
+(
+	select e.user_id, e.type, u.join_date, e.access_date
+	from events e
+	inner join users u
+	on e.user_id = u.user_id 
+),
+music_filter_cte as
+(
+	select user_id from events
+	where type = 'Music'
+),
+music_cte as
+(
+	select j.*,
+	lead(j.type) over(partition by j.user_id order by j.access_date) nxt_type, 
+	lead(j.access_date) over(partition by j.user_id order by j.access_date) nxt_access_date
+	from join_cte j
+	inner join music_filter_cte m
+	on j.user_id = m.user_id
+),
+day_diff_cte as
+(
+	select *, datediff(day, join_date, nxt_access_date) diff_days
+	from music_cte
+	where type = 'Music' and nxt_type = 'P'
+)
+select cast(sum(case when diff_days < 30 then 1 else 0 end) * 1.0 / (select count(distinct user_id) from users) as decimal(3,2))
+from day_diff_cte
+
+--8. Google SQL Interview Question for Data Analyst Position
+--https://www.youtube.com/watch?v=35gjU7pChQk&list=PLBTZqjSKn0IeKBQDjLmzisazhqQy4iGkb&index=24
+
+--find companies who have atleast 2 users who speaks english and german both the languages
+
+create table company_users 
+(
+company_id int,
+user_id int,
+language varchar(20)
+);
+
+insert into company_users values (1,1,'English')
+,(1,1,'German')
+,(1,2,'English')
+,(1,3,'German')
+,(1,3,'English')
+,(1,4,'English')
+,(2,5,'English')
+,(2,5,'German')
+,(2,5,'Spanish')
+,(2,6,'German')
+,(2,6,'Spanish')
+,(2,7,'English');
+
+select * from company_users;
+
+with flag_cte as
+(
+	select *,
+	case when language in ('English','German') then 1 else 0 end as flag
+	from company_users
+),
+cte as
+(
+	select company_id, user_id, sum(flag) flag
+	from flag_cte
+	group by company_id, user_id
+	having sum(flag) >= 2
+)
+select company_id, count(user_id) user_cnt
+from cte
+group by company_id
+having count(user_id) >= 2;
+
+
